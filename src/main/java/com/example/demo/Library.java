@@ -1,12 +1,35 @@
 package com.example.demo;
-import javax.xml.crypto.Data;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Library {
 
-    // CREATE
+    public List<Book> getAllBooks() {
+        List<Book> books = new ArrayList<>();
+        String sql = "SELECT * FROM books ORDER BY title ASC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                books.add(new Book(
+                        rs.getString("title"),
+                        rs.getString("author"),
+                        rs.getString("isbn"),
+                        rs.getBoolean("available")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
     public void addBookToDatabase(Book book) {
         String sql = "INSERT INTO books (isbn, title, author, available) VALUES (?, ?, ?, ?)";
 
@@ -70,25 +93,6 @@ public class Library {
         }
     }
 
-
-    // UPDATE
-    public void updateAvailability(String isbn, boolean available) {
-        String sql = "UPDATE books SET available = ? WHERE isbn = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setBoolean(1, available);
-            stmt.setString(2, isbn);
-
-            stmt.executeUpdate();
-            System.out.println("Book updated.");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     // DELETE
     public void deleteBook(String isbn) {
         String sql = "DELETE FROM books WHERE isbn = ?";
@@ -98,12 +102,12 @@ public class Library {
 
             stmt.setString(1, isbn);
             stmt.executeUpdate();
-            System.out.println("Book deleted.");
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
 
     public void AddmembertoDatabase(LibraryMember member) {
         String sql = "INSERT INTO members(member_id, name) VALUES (?, ?)";
@@ -122,28 +126,19 @@ public class Library {
         }
 
     }
-    public List<Book> getAllBooks() {
-        List<Book> books = new ArrayList<>();
-        String sql = "SELECT * FROM books ORDER BY title ASC";
+    public void updateAvailability(String isbn, boolean available) {
+        String sql = "UPDATE books SET available = ? WHERE isbn = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                String isbn = rs.getString("isbn");
-                String title = rs.getString("title");
-                String author = rs.getString("author");
-                boolean available = rs.getBoolean("available");
-
-                books.add(new Book(title, author, isbn, available));
-            }
+            stmt.setBoolean(1, available);
+            stmt.setString(2, isbn);
+            stmt.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        return books;
     }
 
 }
