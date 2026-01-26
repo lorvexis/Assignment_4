@@ -109,7 +109,7 @@ public class Library {
     }
 
 
-    public void AddmembertoDatabase(LibraryMember member) {
+    public void AddMemberToDatabase(LibraryMember member) {
         String sql = "INSERT INTO members(member_id, name) VALUES (?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -139,6 +139,26 @@ public class Library {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    public List<LibraryMember> getAllMembers() {
+        List<LibraryMember> members = new ArrayList<>();
+        String sql = "SELECT member_id, name FROM members ORDER BY member_id";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                members.add(new LibraryMember(
+                        rs.getInt("member_id"),
+                        rs.getString("name")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return members;
     }
 
 }

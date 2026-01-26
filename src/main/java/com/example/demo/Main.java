@@ -83,7 +83,7 @@ public class Main {
                     String memberName = scanner.nextLine();
 
                     LibraryMember member = new LibraryMember(memberID, memberName);
-                    library.AddmembertoDatabase(member);
+                    library.AddMemberToDatabase(member);
                     break;
 
                 case 0:
