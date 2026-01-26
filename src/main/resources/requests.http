@@ -1,0 +1,33 @@
+### GET all books
+GET http://localhost:8080/books
+
+
+### POST add book
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "title": "Postman Test",
+  "author": "Me",
+  "isbn": "7777",
+  "available": false
+}
+
+### UPDATE availability
+PUT http://localhost:8080/books/7777?available=true
+
+### DELETE book
+DELETE http://localhost:8080/books/7777
+
+### POST members
+
+POST http://localhost:8080/members
+Content-Type: application/json
+
+{
+  "memberId": 1,
+  "name": "Islam"
+}
+
+### GET members
+GET http://localhost:8080/members
