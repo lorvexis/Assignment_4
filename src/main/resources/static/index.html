@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Library Management</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: sans-serif;
+    background: #f4f4f4;
+    color: #333;
+    padding: 30px;
+  }
+
+  h1 { margin-bottom: 24px; }
+  h2 { margin: 28px 0 12px; font-size: 18px; }
+
+  .tabs { margin-bottom: 20px; }
+  .tabs button {
+    padding: 8px 20px;
+    margin-right: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .tabs button.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .form {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .form input, .form select {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    padding: 6px 10px;
+    margin: 6px 0 14px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+  .form label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+  }
+  .form button {
+    padding: 7px 18px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .form button:hover { background: #555; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #ddd;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  th { background: #f0f0f0; font-weight: 600; }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    margin-right: 4px;
+  }
+  .btn-sm:hover { background: #eee; }
+  .btn-del { border-color: #c44; color: #c44; }
+  .btn-del:hover { background: #fdd; }
+
+  .empty { color: #999; padding: 16px 0; font-size: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    display: none;
+  }
+  .toast.error { background: #c44; }
+</style>
+</head>
+<body>
+
+<h1>Library Management</h1>
+
+<div class="tabs">
+  <button class="active" data-tab="books">Books</button>
+  <button data-tab="members">Members</button>
+</div>
+
+<!-- BOOKS -->
+<div class="panel active" id="panel-books">
+  <div class="form">
+    <h2>Add Book</h2>
+    <label>ISBN</label>
+    <input type="text" id="book-isbn" />
+    <label>Title</label>
+    <input type="text" id="book-title" />
+    <label>Author</label>
+    <input type="text" id="book-author" />
+    <label>Available</label>
+    <select id="book-available">
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+    <button onclick="addBook()">Add</button>
+  </div>
+
+  <h2>All Books</h2>
+  <div id="books-table">
+    <div class="empty">Loading…</div>
+  </div>
+</div>
+
+<!-- MEMBERS -->
+<div class="panel" id="panel-members">
+  <div class="form">
+    <h2>Add Member</h2>
+    <label>ID</label>
+    <input type="number" id="member-id" />
+    <label>Name</label>
+    <input type="text" id="member-name" />
+    <button onclick="addMember()">Add</button>
+  </div>
+
+  <h2>All Members</h2>
+  <div id="members-table">
+    <div class="empty">Loading…</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = 'http://localhost:8080';
+let books = [], members = [];
+
+// --- toast ---
+let toastTimer;
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (err ? ' error' : '');
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = 'none', 2500);
+}
+
+// --- tabs ---
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'members') fetchMembers();
+  });
+});
+
+// --- books ---
+async function fetchBooks() {
+  try {
+    books = await (await fetch(BASE + '/books')).json();
+  } catch (e) { books = []; toast('Server unavailable', true); }
+  renderBooks();
+}
+
+function renderBooks() {
+  const wrap = document.getElementById('books-table');
+  if (!books.length) { wrap.innerHTML = '<div class="empty">No books.</div>'; return; }
+  wrap.innerHTML =
+    '<table>' +
+    '<tr><th>ISBN</th><th>Title</th><th>Author</th><th>Available</th><th></th></tr>' +
+    books.map(function(b) {
+      return '<tr>' +
+        '<td>' + esc(b.isbn) + '</td>' +
+        '<td>' + esc(b.title) + '</td>' +
+        '<td>' + esc(b.author) + '</td>' +
+        '<td>' + (b.available ? 'Yes' : 'No') + '</td>' +
+        '<td>' +
+          '<button class="btn-sm" onclick="toggleAvail(\'' + esc(b.isbn) + '\',' + (!b.available) + ')">' + (b.available ? 'Check out' : 'Return') + '</button>' +
+          '<button class="btn-sm btn-del" onclick="deleteBook(\'' + esc(b.isbn) + '\')">Delete</button>' +
+        '</td></tr>';
+    }).join('') +
+    '</table>';
+}
+
+async function addBook() {
+  var isbn  = document.getElementById('book-isbn').value.trim();
+  var title = document.getElementById('book-title').value.trim();
+  var author = document.getElementById('book-author').value.trim();
+  var available = document.getElementById('book-available').value === 'true';
+  if (!isbn || !title || !author) { toast('Fill all fields', true); return; }
+  try {
+    await fetch(BASE + '/books', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({isbn, title, author, available}) });
+    document.getElementById('book-isbn').value  = '';
+    document.getElementById('book-title').value = '';
+    document.getElementById('book-author').value = '';
+    toast('Book added');
+    await fetchBooks();
+  } catch (e) { toast('Error', true); }
+}
+
+async function toggleAvail(isbn, val) {
+  try {
+    await fetch(BASE + '/books/' + isbn + '?available=' + val, { method:'PUT' });
+    toast('Updated');
+    await fetchBooks();
+  } catch (e) { toast('Error', true); }
+}
+
+async function deleteBook(isbn) {
+  if (!confirm('Delete ' + isbn + '?')) return;
+  try {
+    await fetch(BASE + '/books/' + isbn, { method:'DELETE' });
+    toast('Deleted');
+    await fetchBooks();
+  } catch (e) { toast('Error', true); }
+}
+
+// --- members ---
+async function fetchMembers() {
+  try {
+    members = await (await fetch(BASE + '/members')).json();
+  } catch (e) { members = []; toast('Server unavailable', true); }
+  renderMembers();
+}
+
+function renderMembers() {
+    var wrap = document.getElementById('members-table');
+    if (!members.length) { wrap.innerHTML = '<div class="empty">No members.</div>'; return; }
+    wrap.innerHTML =
+        '<table>' +
+        '<tr><th>ID</th><th>Name</th><th></th></tr>' +
+        members.map(function(m) {
+            return '<tr><td>' + m.memberId + '</td><td>' + esc(m.name) + '</td>' +
+                '<td><button class="btn-sm btn-del" onclick="deleteMember(' + m.memberId + ')">Delete</button></td></tr>';
+        }).join('') +
+        '</table>';
+}
+
+async function addMember() {
+  var id   = document.getElementById('member-id').value.trim();
+  var name = document.getElementById('member-name').value.trim();
+  if (!id || !name) { toast('Fill all fields', true); return; }
+  try {
+    await fetch(BASE + '/members', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({memberId: Number(id), name: name}) });
+    document.getElementById('member-id').value   = '';
+    document.getElementById('member-name').value = '';
+    toast('Member added');
+    await fetchMembers();
+  } catch (e) { toast('Error', true); }
+}
+
+async function deleteMember(memberId) {
+    if (!confirm('Delete member ' + memberId + '?')) return;
+    try {
+        await fetch(BASE + '/members/' + memberId, { method:'DELETE' });
+        toast('Deleted');
+        await fetchMembers();
+    } catch (e) { toast('Error', true); }
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+fetchBooks();
+</script>
+</body>
+</html>

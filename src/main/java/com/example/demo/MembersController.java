@@ -19,4 +19,9 @@ public class MembersController {
         library.AddMemberToDatabase(member);
         return "Member added";
     }
+    @DeleteMapping("/{memberId}")
+    public String deleteMember(@PathVariable int memberId) {
+        library.deleteMember(memberId);
+        return "Member deleted";
+    }
 }

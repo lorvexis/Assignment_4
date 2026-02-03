@@ -7,17 +7,17 @@ POST http://localhost:8080/books
 Content-Type: application/json
 
 {
-  "title": "Postman Test",
+  "title": "TEST",
   "author": "Me",
-  "isbn": "7777",
+  "isbn": "789",
   "available": false
 }
 
 ### UPDATE availability
-PUT http://localhost:8080/books/7777?available=true
+PUT http://localhost:8080/books/789?available=true
 
 ### DELETE book
-DELETE http://localhost:8080/books/7777
+DELETE http://localhost:8080/books/789
 
 ### POST members
 

@@ -1,5 +1,4 @@
 package com.example.demo;
-import java.sql.SQLOutput;
 import java.util.Scanner;
 
 public class Main {
@@ -8,6 +7,8 @@ public class Main {
 
         Library library = new Library();
         Scanner scanner = new Scanner(System.in);
+        Person p = new LibraryMember(1, "Islam");
+
 
         while (true) {
             System.out.println("\n=== Library Menu ===");

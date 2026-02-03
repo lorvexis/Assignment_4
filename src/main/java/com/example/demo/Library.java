@@ -161,4 +161,18 @@ public class Library {
         return members;
     }
 
+    public void deleteMember(int memberId) {
+        String sql = "DELETE FROM members WHERE member_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, memberId);
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
